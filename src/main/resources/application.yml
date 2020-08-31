@@ -1,0 +1,41 @@
+spring:
+    kafka:
+        bootstrap-servers: 127.0.0.1:9092 # 指定 Kafka Broker 地址，可以设置多个，以逗号分隔
+        producer:
+            acks: 1 # 0-不应答。1-leader 应答。all-所有 leader 和 follower 应答。
+#            acks: all # Kafka 的事务消息需要基于幂等性来实现，所以必须保证所有节点都写入成功
+            retries: 3 # 发送失败时，重试发送的次数
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer # 消息的 key 的序列化
+            value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # 消息的 value 的序列化
+#            batch_size: 16384 # 每次批量发送消息的最大数量
+#            buffer-memory: 33554432 # 每次批量发送消息的最大内存
+#            properties:
+#                linger:
+#                    ms: 30000 # 批处理延迟时间上限。这里设置为 30 * 1000 ms 过后，不管是否消息数量到达 batch-size 或者消息大小到达 buffer-memory 后，都直接发送一次请求。
+#            transaction-id-prefix: demo. # 事务编号前缀，需要保证相同应用配置相同，不同应用配置不同
+        consumer:
+            auto-offset-reset: earliest # 设置消费者分组最初的消费进度为 earliest
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+#            fetch-max-wait: 10000 # poll 一次拉取的阻塞的最大时长，单位：毫秒。这里指的是阻塞拉取需要满足至少 fetch-min-size 大小的消息
+#            fetch-min-size: 10 # poll 一次消息拉取的最小数据量，单位：字节
+#            max-poll-records: 100 # poll 一次消息拉取的最大数量
+#            isolation-level: read_committed # 读取已提交的消息
+#            enable-auto-commit: false # 使用 Spring-Kafka 的消费进度的提交机制，而不使用原生的 Kafka 的消费进度的提交机制
+            properties:
+                spring:
+                    json:
+                        trusted:
+                            packages:
+                                com.example.kafkatest.message
+        listener:
+#            type: BATCH # 监听器类型，默认为SINGLE，只监听单条消息。这里我们配置 BATCH，监听多条消息，批量消费
+#            ack-mode: MANUAL # 调用时，先标记提交消费进度。等到当前消息被消费完成，然后在提交消费进度
+            missing-topics-fatal: false # 消费监听接口监听的主题不存在时，默认会报错。所以通过设置为 false ，解决报错
+
+logging:
+    level:
+        springframework:
+            kafka: ERROR # spring-kafka INFO 日志太多了，所以我们限制只打印 ERROR 级别
+        apache:
+            kafka: ERROR # kafka INFO 日志太多了，所以我们限制只打印 ERROR 级别
